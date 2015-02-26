@@ -55,7 +55,7 @@ for an older version of firefox, say version 32 on Windows 8 you could run:
 
 If you would like to test on the three newest versions of chrome on OS X Yosemite, you could try this:
 
-self.desktop.yosemite(versions=3)
+self.desktop.yosemite.chrome(versions=3)
 
 In order to specify your resolution, pass it in as a parameter. For example:
 
@@ -78,3 +78,11 @@ Or, if you simply want to test on the iphone 5
     self.mobile.apple.iphone5()
 
 
+If you would like to run through a local proxy, start your local session as you normally would (using ./BrowserStackLocal ACCESS_KEY localhost,3000,0) then, in your setUp method, include these lines:
+
+::
+    
+    self.local = True
+    self.local_id = '<your test id>'
+
+Need other custom options? Add those to the self._global_caps dictionary

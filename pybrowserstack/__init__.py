@@ -6,7 +6,6 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 import concurrent.futures
 import platform_mixins
-import concurrent.futures
 
 from platform_utils import *
 import time
@@ -36,7 +35,7 @@ def browserstack(myfunc):
                     print("Completed "+str(mycap))
         if retry < 3 and len(retrycaps) > 0:
             print("Waiting 30 seconds before retrying failed targets...")
-            time.sleep(20)
+            time.sleep(30)
             runjobs(tester,mycaps,retry+1)
     def deco(tester,retry=0):
         if tester.api_keys['user'] == '' or tester.api_keys['pass'] == '':

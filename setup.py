@@ -18,7 +18,7 @@ setup(name='pybrowserstack',
       include_package_data=True,
       zip_safe=True,
       install_requires=[
-          # -*- Extra requirements: -*-
+          'colorama','selenium'
       ],
       entry_points="""
       # -*- Entry points: -*-
