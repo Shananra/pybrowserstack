@@ -1,5 +1,11 @@
 pybrowserstack extends the unittest framework to make selenium/browserstack automated tests really easy.
 
+To install, simply run
+
+::
+    
+    pip install pybrowserstack
+
 Example:
 ::
     
