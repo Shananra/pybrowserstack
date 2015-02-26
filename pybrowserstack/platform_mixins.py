@@ -1,5 +1,5 @@
-import avail_platforms as platforms
-from platform_utils import *
+import pybrowserstack.avail_platforms as platforms
+from pybrowserstack.platform_utils import *
 import difflib,colorama
 from colorama import Fore, Back, Style
 

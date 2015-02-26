@@ -5,9 +5,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 import concurrent.futures
-import platform_mixins
+import pybrowserstack.platform_mixins
 
-from platform_utils import *
+from pybrowserstack.platform_utils import *
 import time
 
 def browserstack(myfunc):
