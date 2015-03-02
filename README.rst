@@ -22,7 +22,7 @@ Example:
             self.windows_8.firefox()
             self.mobile()
     
-        @selenium_django.browserstack
+        @pybrowserstack.browserstack
         def test_firefox(self):
             self.driver.get("http://google.com")
             print(self.driver.title)
