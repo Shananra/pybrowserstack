@@ -14,6 +14,7 @@ def browserstack(myfunc):
 
     def worker(mycap,tester):
         global has_screenshot
+        print("starting...")
         has_screenshot = False
         tester.driver = webdriver.Remote(command_executor='http://%(user)s:%(pass)s@hub.browserstack.com:80/wd/hub' % tester.api_keys,desired_capabilities=mycap)
         bk_save_screenshot = tester.driver.save_screenshot
@@ -88,7 +89,6 @@ class testBase(object):
         new_cap = {}
         if self.local:
             new_cap['browserstack.local'] = True
-            new_cap['browserstack.localIdentifier'] = self.local_id
         if bobj.device == 'desktop':
             new_cap['os'] = bobj.os
             new_cap['browser'] = bobj.browser
