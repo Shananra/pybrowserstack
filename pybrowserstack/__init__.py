@@ -11,9 +11,21 @@ from pybrowserstack.platform_utils import *
 import time
 
 def browserstack(myfunc):
+
     def worker(mycap,tester):
+        global has_screenshot
+        has_screenshot = False
         tester.driver = webdriver.Remote(command_executor='http://%(user)s:%(pass)s@hub.browserstack.com:80/wd/hub' % tester.api_keys,desired_capabilities=mycap)
+        bk_save_screenshot = tester.driver.save_screenshot
+        
+        def new_save_screenshot(*args):
+            global has_screenshot
+            has_screenshot = True
+            bk_save_screenshot(*args)
+        tester.driver.save_screenshot = new_save_screenshot
         myfunc(tester)
+        if not has_screenshot:
+            bk_save_screenshot('saved.png')
         tester.driver.quit()
         return True
     def runjobs(tester,mycaps,retry=0):
@@ -39,7 +51,7 @@ def browserstack(myfunc):
             runjobs(tester,mycaps,retry+1)
     def deco(tester,retry=0):
         if tester.api_keys['user'] == '' or tester.api_keys['pass'] == '':
-            raise Exception("U")
+            raise Exception("Username and api key are required")
         runjobs(tester,getcaps())
     return deco
 
