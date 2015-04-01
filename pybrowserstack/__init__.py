@@ -9,7 +9,8 @@ import concurrent.futures
 import pybrowserstack.platform_mixins
 
 from pybrowserstack.platform_utils import *
-import time,sys
+import time,sys,pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 def browserstack(myfunc):
 
@@ -25,8 +26,7 @@ def browserstack(myfunc):
             has_screenshot = True
             bk_save_screenshot(*args)
         tester.driver.save_screenshot = new_save_screenshot
-        with tester.subTest(str(mycap)):
-            myfunc(tester)
+        myfunc(tester)
         if not has_screenshot:
             bk_save_screenshot('saved.png')
         try:
@@ -36,31 +36,35 @@ def browserstack(myfunc):
         return True
     def runjobs(tester,mycaps,retry=0):
         retrycaps = []
+        has_failure = False
         with concurrent.futures.ThreadPoolExecutor(max_workers=tester.workers) as executor:
             future_worker = {executor.submit(worker,tester.gen_cap(mycap),tester): mycap for mycap in mycaps}
             for future in concurrent.futures.as_completed(future_worker):
                 mycap = future_worker[future]
+                if has_failure:
+                    retrycaps.append(mycap)
+                    continue
                 try:
                     data = future.result()
                 except WebDriverException as exc:
                     if 'sessions are currently being used' in str(exc):
-                        if retry < 3:
+                        if retry < 5:
                             print('Too many sessions are being used. Will retry: '+str(mycap))
                             retrycaps.append(mycap)
-                            time.sleep(2)
+                            has_failure = True
                         else:
                             print('generated an exception: %s' % (exc,))
                     elif 'Session not started or terminated' in str(exc):
-                        if retry < 3:
+                        if retry < 5:
                             print('Session not started, will retry: '+str(mycap))
                             retrycaps.append(mycap)
                             try:
                                 tester.driver.quit()
                             except:
                                 pass
-                            time.sleep(2)
+                            time.sleep(60)
                     elif 'Could not start Browser' in str(exc):
-                        if retry < 3:
+                        if retry < 5:
                             print("Emulator failed to start, will retry: "+str(mycap))
                             retrycaps.append(mycap)
                     else:
@@ -76,9 +80,11 @@ def browserstack(myfunc):
                 else:
                     print("Completed "+str(mycap))
                 sys.stdout.flush()
-        if retry < 3 and len(retrycaps) > 0:
-            print("Waiting 60 seconds before retrying failed targets...")
-            time.sleep(60)
+        if retry < 5 and len(retrycaps) > 0:
+            print("Caps: "+len(retrycaps))
+            pp.pprint(retrycaps)
+            print("Waiting 90 seconds before retrying failed targets...")
+            time.sleep(90)
             runjobs(tester,mycaps,retry+1)
     def deco(tester,retry=0):
         if tester.api_keys['user'] == '' or tester.api_keys['pass'] == '':

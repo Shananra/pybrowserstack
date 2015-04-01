@@ -9,4 +9,4 @@ def setcap(caps):
 
 def getcaps():
     global _caps
-    return _caps
+    return list(set(_caps))
