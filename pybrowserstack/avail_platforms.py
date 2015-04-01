@@ -7,7 +7,7 @@ win = {
         'opera':['12.15','12.16']
     },  
     'xp':{
-        'ie':['7','8'],
+        'ie':['6','7'],
         'firefox':[str(x) for x in range(16,36)],
         'safari':['5.1'],
         'chrome':[str(x) for x in range(22,40)],
