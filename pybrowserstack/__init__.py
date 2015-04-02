@@ -14,8 +14,10 @@ pp = pprint.PrettyPrinter(indent=4)
 
 def browserstack(myfunc):
 
-    def worker(mycap,tester):
+    def worker(mycap, tester, has_failure):
         global has_screenshot
+        if has_failure:
+            return False
         print("starting...")
         has_screenshot = False
         tester.driver = webdriver.Remote(command_executor='http://%(user)s:%(pass)s@hub.browserstack.com:80/wd/hub' % tester.api_keys,desired_capabilities=mycap)
@@ -38,7 +40,7 @@ def browserstack(myfunc):
         retrycaps = []
         has_failure = False
         with concurrent.futures.ThreadPoolExecutor(max_workers=tester.workers) as executor:
-            future_worker = {executor.submit(worker,tester.gen_cap(mycap),tester): mycap for mycap in mycaps}
+            future_worker = {executor.submit(worker,tester.gen_cap(mycap),tester,has_failure): mycap for mycap in mycaps}
             for future in concurrent.futures.as_completed(future_worker):
                 mycap = future_worker[future]
                 if has_failure:
@@ -48,14 +50,18 @@ def browserstack(myfunc):
                     data = future.result()
                 except WebDriverException as exc:
                     if 'sessions are currently being used' in str(exc):
-                        if retry < 5:
+                        if tester.skip_on_multiple_failures and retry > 2:
+                            print('Skipping '+str(mycap))
+                        elif retry < 5:
                             print('Too many sessions are being used. Will retry: '+str(mycap))
                             retrycaps.append(mycap)
                             has_failure = True
                         else:
                             print('generated an exception: %s' % (exc,))
                     elif 'Session not started or terminated' in str(exc):
-                        if retry < 5:
+                        if tester.skip_on_multiple_failures and retry > 2:
+                            print('Skipping '+str(mycap))
+                        elif retry < 5:
                             print('Session not started, will retry: '+str(mycap))
                             retrycaps.append(mycap)
                             try:
@@ -64,6 +70,8 @@ def browserstack(myfunc):
                                 pass
                             time.sleep(60)
                     elif 'Could not start Browser' in str(exc):
+                        if tester.skip_on_multiple_failures and retry > 2:
+                            print('Skipping '+str(mycap))
                         if retry < 5:
                             print("Emulator failed to start, will retry: "+str(mycap))
                             retrycaps.append(mycap)
@@ -81,11 +89,11 @@ def browserstack(myfunc):
                     print("Completed "+str(mycap))
                 sys.stdout.flush()
         if retry < 5 and len(retrycaps) > 0:
-            print("Caps: "+len(retrycaps))
-            pp.pprint(retrycaps)
+            print("Devices remaining on this run: "+str(len(retrycaps)))
+            pp.pprint([str(x) for x in retrycaps])
             print("Waiting 90 seconds before retrying failed targets...")
             time.sleep(90)
-            runjobs(tester,mycaps,retry+1)
+            runjobs(tester,retrycaps,retry+1)
     def deco(tester,retry=0):
         if tester.api_keys['user'] == '' or tester.api_keys['pass'] == '':
             raise Exception("Username and api key are required")
@@ -101,7 +109,7 @@ class testBase(object):
     local_id = 'MyTest'
     workers = 1
     api_keys = {'user':'','pass':''}
-
+    skip_on_multiple_failures = False
 
     def __init__(self,*args,**kargs):
         for i in platform_mixins.get_avail_mixins():
@@ -112,6 +120,9 @@ class testBase(object):
         self.desktop = platform_mixins.desktop(self)
         self.desktops = self.desktop#also an alias
         super(testBase, self).__init__(*args, **kargs)
+
+    def new_session(self):
+        reset_caps()
 
     def show(self):
         mycaps = getcaps()
@@ -144,6 +155,8 @@ class testBase(object):
             new_cap[mycap] = self._global_caps[mycap]
         self.browser = bobj
         return new_cap
+
+
 
     
 if __name__ == '__main__':

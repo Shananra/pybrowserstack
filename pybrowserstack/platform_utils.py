@@ -10,3 +10,6 @@ def setcap(caps):
 def getcaps():
     global _caps
     return list(set(_caps))
+
+def reset_caps():
+    _caps = []
